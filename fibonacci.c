@@ -129,9 +129,20 @@ static ssize_t input_write(struct file *filp, const char *buff, size_t len, loff
 static ssize_t read_number(struct file *filp, char *buff, size_t len, loff_t *off,unsigned long long *num)
 {
   ssize_t size;
+  long length;
+
   if (*off != 0) {
     return 0;
   }
+
+  if (input_error_code < 0) {
+    copy_to_user(buff, input_error_message, strlen(input_error_message));
+    length = strlen(input_error_message);
+    *off = length;
+    return length;
+  }
+
+
   snprintf(buf, BUF_SIZE, "%llu", *num);
   size = strlen(buf);
   if (size >= len) {
@@ -144,24 +155,17 @@ static ssize_t read_number(struct file *filp, char *buff, size_t len, loff_t *of
   return size;
 }
 
-static ssize_t input_read(struct file *filp, char *buff, size_t length, loff_t * offset)
+static ssize_t input_read(struct file *filp, char *buff, size_t len, loff_t * off)
 {
   unsigned long long tmp;
-  if (input_error_code < 0) {
-    copy_to_user(buff, input_error_message, strlen(input_error_message));
-    return input_error_code;
-  }
+
   tmp = n;
-  return read_number(filp, buff, length, offset, &tmp);
+  return read_number(filp, buff, len, off, &tmp);
 }
 
-static ssize_t result_read(struct file *filp, char *buff, size_t length, loff_t * offset)
+static ssize_t result_read(struct file *filp, char *buff, size_t len, loff_t * off)
 {
-  if (input_error_code < 0) {
-    copy_to_user(buff, input_error_message, strlen(input_error_message));
-    return input_error_code;
-  }
-  return read_number(filp, buff, length, offset, &res);
+  return read_number(filp, buff, len, off, &res);
 }
 
 
